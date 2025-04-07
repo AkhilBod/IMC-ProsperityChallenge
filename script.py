@@ -152,10 +152,9 @@ class Trader:
                 continue
             
             # Calculate mid price from order book
-            best_bid = max(order_depth.buy_orders.keys())
-            best_ask = min(order_depth.sell_orders.keys())
-            best_bid_amount = order_depth.buy_orders[best_bid]
-            best_ask_amount = order_depth.sell_orders[best_ask]
+            best_ask, best_ask_amount = list(order_depth.sell_orders.items())[0]
+            best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
+
             mid_price = (best_bid + best_ask) / 2
             print("SELL", str(-50) + "x", best_bid)
             print("BUY", str(50) + "x", best_ask)
