@@ -1,0 +1,7 @@
+# Ignore backtests folder
+backtests/
+
+# Ignore Python cache directories
+__pycache__/
+*.py[cod]
+*$py.class
