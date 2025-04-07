@@ -126,14 +126,13 @@ class Trader:
         self.kelp_std_dev_multiplier = 2.5
         self.resin_std_dev_multiplier = 1.0
         
-    def run(self, state: TradingState) -> Tuple[Dict[str, List[Order]], List, str]:
-
+    def run(self, state: TradingState) -> Tuple[Dict[str, List[Order]], int, str]:  # Changed return type: List to int
         print("traderData: " + state.traderData if state.traderData else "traderData: ")
         print("Observations: " + str(state.observations))
         
         # Initialize result containers
         result = {}
-        conversions = []
+        conversions = 0  # Changed from list to integer
         
         # Load previous state if available
         trader_state = self.initialize_state(state.traderData)
@@ -156,9 +155,6 @@ class Trader:
             best_bid, best_bid_amount = list(order_depth.buy_orders.items())[0]
 
             mid_price = (best_bid + best_ask) / 2
-            print("SELL", str(-50) + "x", best_bid)
-            print("BUY", str(50) + "x", best_ask)
-
             # Initialize product data if not already present
             if product not in trader_state["historical_prices"]:
                 trader_state["historical_prices"][product] = []
@@ -206,7 +202,7 @@ class Trader:
             position_limit = 50  # Adjust based on actual limits
             
             # Buy signal - when ask price is at or below our buy acceptable price (lower band)
-            if best_ask <= buy_acceptable_price:
+            if best_ask < buy_acceptable_price:
                 # Calculate available position size
                 available_position = position_limit - current_position
                 if available_position > 0:
@@ -218,7 +214,7 @@ class Trader:
                         print("BUY", str(buy_quantity) + "x", best_ask)
                     
             # Sell signal - when bid price is at or above our sell acceptable price (upper band)
-            elif best_bid >= sell_acceptable_price:
+            elif best_bid > sell_acceptable_price:
                 # Calculate available position size
                 available_position = position_limit + current_position
                 if available_position > 0:
