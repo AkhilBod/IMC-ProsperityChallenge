@@ -120,11 +120,23 @@ logger = Logger()
 
 class Trader:
     def __init__(self):
-        self.buy_price = 9998
-        self.sell_price = 10002
+        # Default price levels
+        self.default_buy_price = 9998
+        self.default_sell_price = 10002
         self.mid_price = 10000
+        
+        # Dynamic price levels based on requirements
+        self.alt_buy_price = 9996
+        self.alt_sell_price = 10004
+        
+        # Generous pricing when position > 30
+        self.large_pos_buy_price = 9997
+        self.large_pos_sell_price = 10003
+        
+        # Position thresholds
         self.position_limit = 50
-        self.take_profit_percentage = 0  # 50% of position at mid price
+        self.large_position_threshold = 30
+        self.take_profit_percentage = 0  # 00% of position at mid price
         
         # Exit prices for max positions
         self.long_exit_price = 10000  # Exit price when at max long position
@@ -157,6 +169,34 @@ class Trader:
         # Check if we're at max position
         at_max_long = current_position >= self.position_limit
         at_max_short = current_position <= -self.position_limit
+        
+        # Determine if position is large
+        is_large_position = abs(current_position) > self.large_position_threshold
+        
+        # Find the best bid and ask in the market
+        best_bid = max(order_depth.buy_orders.keys()) if order_depth.buy_orders else 0
+        best_ask = min(order_depth.sell_orders.keys()) if order_depth.sell_orders else float('inf')
+        
+        # Determine our price levels based on market conditions and position size
+        if is_large_position:
+            # Use more generous pricing when position is large
+            buy_price = self.large_pos_buy_price
+            sell_price = self.large_pos_sell_price
+            logger.print("LARGE POSITION", current_position, "Using generous prices")
+        else:
+            # Check if best bid is our default bid price
+            if best_bid != self.default_buy_price:
+                buy_price = self.alt_buy_price
+            else:
+                buy_price = self.default_buy_price
+                
+            # Check if best ask is our default ask price
+            if best_ask != self.default_sell_price:
+                sell_price = self.alt_sell_price
+            else:
+                sell_price = self.default_sell_price
+        
+        logger.print("USING PRICES", "Buy:", buy_price, "Sell:", sell_price)
         
         # Check if our exit prices are available in the market
         long_exit_available = False
@@ -199,13 +239,13 @@ class Trader:
         
         # Check if our buy price exists in the sell orders
         for price, quantity in order_depth.sell_orders.items():
-            if price <= self.buy_price:
+            if price <= buy_price:
                 buy_available = True
                 break
                 
         # Check if our sell price exists in the buy orders
         for price, quantity in order_depth.buy_orders.items():
-            if price >= self.sell_price:
+            if price >= sell_price:
                 sell_available = True
                 break
         
@@ -221,16 +261,16 @@ class Trader:
             # Calculate how much we can buy
             buy_quantity = self.position_limit - current_position
             if buy_quantity > 0:
-                orders.append(Order(product, self.buy_price, buy_quantity))
-                logger.print("BUY", str(buy_quantity) + "x", self.buy_price)
+                orders.append(Order(product, buy_price, buy_quantity))
+                logger.print("BUY", str(buy_quantity) + "x", buy_price)
         
         # Sell when price reaches our sell target and we have inventory
         if sell_available and current_position > -self.position_limit:
             # Calculate how much we can sell
             sell_quantity = self.position_limit + current_position
             if sell_quantity > 0:
-                orders.append(Order(product, self.sell_price, -sell_quantity))
-                logger.print("SELL", str(sell_quantity) + "x", self.sell_price)
+                orders.append(Order(product, sell_price, -sell_quantity))
+                logger.print("SELL", str(sell_quantity) + "x", sell_price)
         
         # Take profit at mid price if we have a positive position
         if take_profit_available and current_position > 0:
