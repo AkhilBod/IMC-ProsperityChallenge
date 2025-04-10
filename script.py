@@ -122,10 +122,10 @@ logger = Logger()
 class Trader:
     def __init__(self):
         # Strategy parameters
-        self.ema_periods = 200
+        self.ema_periods = 80
         self.kelp_std_dev_multiplier = 2.5
         self.resin_std_dev_multiplier = 1.0
-        
+
     def run(self, state: TradingState) -> Tuple[Dict[str, List[Order]], int, str]:  # Changed return type: List to int
         print("traderData: " + state.traderData if state.traderData else "traderData: ")
         print("Observations: " + str(state.observations))
